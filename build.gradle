@@ -16,11 +16,55 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
-}
+	flatDir {
+		dirs 'libs'
+	}
 
-fabricApi {
-	configureDataGeneration {
-		client = true
+	maven { url "https://maven.shedaniel.me" }
+	maven { url "https://maven.terraformersmc.com/releases/" }
+
+	// YACL
+	maven {
+		url = "https://maven.isxander.dev/releases"
+
+		content {
+			includeGroup "dev.isxander"
+			includeGroup "org.quiltmc.parsers"
+		}
+	}
+	maven {
+		url = "https://maven.azureaaron.net/releases"
+
+		content {
+			includeGroup "net.azureaaron"
+		}
+	}
+
+	maven {
+		url = "https://maven.azureaaron.net/snapshots"
+
+		content {
+			includeGroup "net.azureaaron"
+		}
+	}
+	// For Minecraft snapshots
+	maven {
+		url = "https://maven.isxander.dev/snapshots"
+
+		content {
+			includeGroup "dev.isxander"
+		}
+	}
+
+	// For NEU repo parser
+	exclusiveContent {
+		forRepository {
+			maven { url = "https://repo.nea.moe/releases" }
+		}
+
+		filter {
+			includeGroup "moe.nea"
+		}
 	}
 }
 
@@ -30,9 +74,43 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+	compileOnly "com.demonwav.mcdev:annotations:${project.mcdev_annotations_version}"
+
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	
+
+	// Mod Menu
+	modApi "com.terraformersmc:modmenu:16.0.0"
+
+	// Dandelion (also shades in MoulConfig)
+	include modImplementation("net.azureaaron:dandelion:${project.dandelion_version}")
+
+	// YACL
+	include modImplementation("dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric")
+
+	// HM API (Hypixel Mod API Library)
+	include modImplementation("net.azureaaron:hm-api:${project.hm_api_version}")
+
+	// Fabric Language Kotlin for using MoulConfig - we are still a Java-exclusive mod
+	modImplementation("net.fabricmc:fabric-language-kotlin:${project.flk_version}")
+
+	// NEU RepoParser
+	include implementation("moe.nea:neurepoparser:${project.repoparser_version}")
+
+	// Apache Commons Math
+	include implementation("org.apache.commons:commons-math3:${project.commons_math_version}")
+
+	// Apache Commons Text
+	include implementation("org.apache.commons:commons-text:${project.commons_text_version}")
+
+	// Legacy Item DFU
+	include implementation("net.azureaaron:legacy-item-dfu:${project.legacy_item_dfu_version}")
+}
+
+fabricApi {
+	configureDataGeneration {
+		client = true
+	}
 }
 
 processResources {
