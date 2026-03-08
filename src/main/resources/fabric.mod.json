@@ -23,6 +23,9 @@
 		],
 		"client": [
 			"net.roxarex.RoxareXModsClient"
+		],
+		"modmenu": [
+			"net.roxarex.ModMenuIntegration"
 		]
 	},
 	"mixins": [
