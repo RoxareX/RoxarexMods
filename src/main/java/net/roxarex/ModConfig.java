@@ -19,9 +19,12 @@ public class ModConfig {
 	public int updateFrequency = 1000;
 
 	// ===== RIFT SETTINGS =====
-	public boolean riftAlerts = true;
 	public boolean showTimers = true;
 	public int alertVolume = 80;
+	public float alertPitch = 1.0f;
+	public int UbixCooldownUIX = 1;
+	public int UbixCooldownUIY = 1;
+	public float UbixCooldownUIScale = 1.0f;
 	public int highlightColor = 0xFF00FF;
 
 	// ===== CONFIG UI =====

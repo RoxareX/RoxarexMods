@@ -1,8 +1,13 @@
 package net.roxarex;
 
+import dev.isxander.yacl3.api.controller.ControllerBuilder;
 import net.azureaaron.dandelion_bp.api.ConfigCategory;
 import net.azureaaron.dandelion_bp.api.Option;
+import net.azureaaron.dandelion_bp.api.controllers.FloatController;
+import net.azureaaron.dandelion_bp.api.controllers.IntegerController;
 import net.minecraft.network.chat.Component;
+import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
+import dev.isxander.yacl3.api.OptionDescription;
 
 public class GeneralConfigCategory {
 
@@ -34,8 +39,8 @@ public class GeneralConfigCategory {
 						.description(Component.literal("How often to update (milliseconds)"))
 						.binding(defaults.updateFrequency,
 								() -> config.updateFrequency,
-								newValue -> config.updateFrequency = newValue)
-						.controller(ConfigUtils.createIntegerSliderController(100, 5000))
+								newValue -> config.updateFrequency = Math.max(100, Math.min(5000, newValue)))
+						.controller(IntegerController.createBuilder().range(100, 5000).slider(5).build())
 						.build())
 
 				.build();

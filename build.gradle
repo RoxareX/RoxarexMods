@@ -20,6 +20,11 @@ repositories {
 		dirs 'libs'
 	}
 
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+	}
+
 	maven { url "https://maven.shedaniel.me" }
 	maven { url "https://maven.terraformersmc.com/releases/" }
 
@@ -66,6 +71,8 @@ repositories {
 			includeGroup "moe.nea"
 		}
 	}
+
+	mavenCentral() // for JGit and other plain Java libs
 }
 
 dependencies {
@@ -106,6 +113,19 @@ dependencies {
 
 	// Legacy Item DFU
 	include implementation("net.azureaaron:legacy-item-dfu:${project.legacy_item_dfu_version}")
+
+	// Skyblocker from libs and its dependencies 	#Start#
+	modCompileOnly "maven.modrinth:skyblocker-liap:v6.0.3+1.21.10"
+	modLocalRuntime "maven.modrinth:skyblocker-liap:v6.0.3+1.21.10"
+	// YACL
+	include modImplementation("dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric")
+	// Skyblocker's transitive deps (Modrinth Maven won't pull these automatically)
+	include implementation("org.eclipse.jgit:org.eclipse.jgit:${project.jgit_version}")
+	// Networth Calculator (https://github.com/AzureAaron/networth-calculator)
+	include implementation("net.azureaaron:networth-calculator:${project.networth_calculator_version}")
+	// JSpecify Annotations
+	include implementation("org.jspecify:jspecify:1.0.0")
+	// End of Skyblocker Dependencies				#End#
 }
 
 fabricApi {
