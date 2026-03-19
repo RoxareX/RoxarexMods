@@ -15,20 +15,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import de.hysky.skyblocker.skyblock.itemlist.ItemRepository;
 import net.minecraft.resources.Identifier;
+import net.roxarex.ConfigManager;
 import net.roxarex.ModConfig;
 import net.roxarex.injected.SkyblockerStack;
 import org.joml.Matrix3x2fStack;
 
+import java.time.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class RiftUbixCooldown {
-    private static int ubixUsedAt = 0;
     private static final Identifier RIFT_UBIX_COOLDOWN = SkyblockerMod.id("rift_ubix_cooldown");
     private static String message = "";
     private static boolean playedReadySound = false;
     private static boolean initialized = false;
-    private static SkyblockerStack stack;
 
     private static boolean ubixUsed = false; // Track if the Ubix was used
 
@@ -42,7 +42,7 @@ public class RiftUbixCooldown {
     public static void init() {
         if (initialized) return;
         initialized = true;
-        Minecraft client = Minecraft.getInstance();
+        System.out.println("UbixNextAvailable: " + ModConfig.LIVE.UbixNextAvailable);
 
         // Register the UseItemCallback to listen for item usage
         UseItemCallback.EVENT.register((player, world, hand) -> {
@@ -68,7 +68,10 @@ public class RiftUbixCooldown {
                     OPPONENT_MOTES_PATTERN.matcher(msg).find()) {
                 if (ubixUsed) {
                     ubixUsed = false;
-                    ubixUsedAt = (int) (getCurrentRealTimeMillis() / 1000);
+                    // Save ubixUsedAt as a date and add plus 2 hours
+                    ModConfig.LIVE.UbixNextAvailable = LocalDateTime.now().plusHours(2);
+                    ConfigManager.saveConfig();
+                    System.out.println("UBIX Cooldown Started!");
                 }
             }
 
@@ -77,11 +80,18 @@ public class RiftUbixCooldown {
             if (matcher.find()) {
                 if (ubixUsed) {
                     ubixUsed = false;
+                    // Get the time from chat message and later assign it to the date
                     int hours = matcher.group(1) != null ? Integer.parseInt(matcher.group(1)) : 0;
                     int minutes = matcher.group(2) != null ? Integer.parseInt(matcher.group(2)) : 0;
                     int seconds = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
-                    int totalSeconds = hours * 3600 + minutes * 60 + seconds;
-                    ubixUsedAt = (int) (getCurrentRealTimeMillis() / 1000) - (2 * 60 * 60 - totalSeconds);
+
+                    ModConfig.LIVE.UbixNextAvailable = LocalDateTime.now()
+                            .plusHours(hours)
+                            .plusMinutes(minutes)
+                            .plusSeconds(seconds)
+                            .withNano(0);
+                    ConfigManager.saveConfig();
+                    System.out.println("UBIX SPLIT! message loaded and saved!");
                 }
             }
         });
@@ -96,10 +106,8 @@ public class RiftUbixCooldown {
         if (client.player == null) return;
         if (!(Utils.isOnSkyblock() && Utils.isOnHypixel())) return;
 
-        int currentTime = (int) (getCurrentRealTimeMillis() / 1000);
-        int cooldownSeconds = 2 * 60 * 60; // 2 hours
-        int elapsed = currentTime - ubixUsedAt;
-        int remainingTime = cooldownSeconds - elapsed;
+        var remainingTimeInDate = Duration.between(LocalDateTime.now(),ModConfig.LIVE.UbixNextAvailable).getSeconds();
+        int remainingTime = (int) remainingTimeInDate;
 
         if (remainingTime > 0) {
             playedReadySound = false;
