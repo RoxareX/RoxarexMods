@@ -1,6 +1,11 @@
 plugins {
-	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+	// Building
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+	id "com.diffplug.spotless" version "${spotless_version}"
+	id "checkstyle"
+	// Publishing
 	id 'maven-publish'
+	id "me.modmuss50.mod-publish-plugin" version "${mod_publish_plugin_version}"
 }
 
 version = project.mod_version
@@ -77,30 +82,35 @@ repositories {
 
 dependencies {
 	// To change the versions see the gradle.properties file
+	testImplementation "net.fabricmc:fabric-loader-junit:${project.loader_version}"
+	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	mappings loom.layered {
-		officialMojangMappings()
-		mappings file("roxarexmods-override.tiny")
-	}
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Loom does not always add this
+	implementation "ca.weblite:java-objc-bridge:1.1"
+
+//	mappings loom.layered {
+//		officialMojangMappings()
+//	}
 
 	compileOnly "com.demonwav.mcdev:annotations:${project.mcdev_annotations_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
 	// Mod Menu
-	modApi "com.terraformersmc:modmenu:${project.mod_menu_version}"
+	implementation "com.terraformersmc:modmenu:${project.mod_menu_version}"
 
 	// Dandelion (also shades in MoulConfig)
-	include modImplementation("net.azureaaron:dandelion:${project.dandelion_version}")
+	include implementation("net.azureaaron:dandelion:${project.dandelion_version}")
 
 	// HM API (Hypixel Mod API Library)
-	include modImplementation("net.azureaaron:hm-api:${project.hm_api_version}")
+	include implementation("net.azureaaron:hm-api:${project.hm_api_version}")
 
 	// Fabric Language Kotlin for using MoulConfig - we are still a Java-exclusive mod
-	modImplementation("net.fabricmc:fabric-language-kotlin:${project.flk_version}")
+	implementation("net.fabricmc:fabric-language-kotlin:${project.flk_version}")
 
 	// NEU RepoParser
 	include implementation("moe.nea:neurepoparser:${project.repoparser_version}")
@@ -111,7 +121,7 @@ dependencies {
 	// Apache Commons Text
 	include implementation("org.apache.commons:commons-text:${project.commons_text_version}")
 	// TwelveMonkeys ImageIO - provides ImageInputStreamSpi on JDK 21+
-	include implementation("com.twelvemonkeys.imageio:imageio-core:3.11.0")
+//	include implementation("com.twelvemonkeys.imageio:imageio-core:3.11.0")
 //	include implementation("com.twelvemonkeys.imageio:imageio-stream:3.11.0")
 //	include implementation("com.twelvemonkeys.imageio:imageio-stream:3.9.4")
 
@@ -119,10 +129,10 @@ dependencies {
 	include implementation("net.azureaaron:legacy-item-dfu:${project.legacy_item_dfu_version}")
 
 	// Skyblocker from libs and its dependencies 	#Start#
-	modCompileOnly "maven.modrinth:skyblocker-liap:${project.skyblocker_version}"
-	modLocalRuntime "maven.modrinth:skyblocker-liap:${project.skyblocker_version}"
+	compileOnly "maven.modrinth:skyblocker-liap:${project.skyblocker_version}"
+	runtimeOnly "maven.modrinth:skyblocker-liap:${project.skyblocker_version}"
 	// YACL
-	include modImplementation("dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric")
+	include implementation("dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric")
 	// Skyblocker's transitive deps (Modrinth Maven won't pull these automatically)
 	include implementation("org.eclipse.jgit:org.eclipse.jgit:${project.jgit_version}")
 	// Networth Calculator (https://github.com/AzureAaron/networth-calculator)
@@ -147,7 +157,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 }
 
 java {
@@ -156,8 +166,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {

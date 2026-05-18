@@ -115,7 +115,11 @@ public abstract class ItemStackMixin implements DataComponentHolder, SkyblockerS
 		return durabilityBarFill >= 0 ? OkLabColor.interpolate(CommonColors.RED, CommonColors.GREEN, durabilityBarFill) : original;
 	}
 
-	@Inject(method = "<init>(Lnet/minecraft/world/level/ItemLike;ILnet/minecraft/core/component/PatchedDataComponentMap;)V", at = @At("TAIL"))
+	/**
+	 * Constructor injection: target any ItemStack constructor and run after initialization.
+	 * Using method "<init>" without descriptor lets this mixin work across mappings/versions.
+	 */
+	@Inject(method = "<init>", at = @At("TAIL"))
 	private void onInit(CallbackInfo ci) {
 		roxarexmods$getAndCacheDurability();
 	}
@@ -197,6 +201,23 @@ public abstract class ItemStackMixin implements DataComponentHolder, SkyblockerS
 	@Override
 	public SkyblockItemRarity getSkyblockRarity() {
 		if (skyblockRarity != null) return skyblockRarity;
-		return skyblockRarity = ItemUtils.getItemRarity((ItemStack) (Object) this);
+		// Cast to intersection type to satisfy ItemUtils generic bounds (ItemInstance & SkyblockerStack)
+		// Use reflection to call ItemUtils.getItemRarity to avoid compile-time dependency on Skyblocker-specific ItemInstance type
+		try {
+			Class<?> itemUtilsClass = Class.forName("de.hysky.skyblocker.utils.ItemUtils");
+			java.lang.reflect.Method m = null;
+			for (java.lang.reflect.Method mm : itemUtilsClass.getMethods()) {
+				if (mm.getName().equals("getItemRarity")) {
+					m = mm;
+					break;
+				}
+			}
+			if (m != null) {
+				Object res = m.invoke(null, (Object) this);
+				return skyblockRarity = (SkyblockItemRarity) res;
+			}
+		} catch (Throwable ignored) {}
+		// Fallback
+		return skyblockRarity = null;
 	}
 }

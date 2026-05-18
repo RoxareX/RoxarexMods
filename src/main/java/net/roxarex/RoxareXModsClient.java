@@ -3,9 +3,12 @@ package net.roxarex;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.azureaaron.dandelion.api.DandelionConfigScreen;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.client.Minecraft;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
+import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.Nullable;
@@ -17,50 +20,51 @@ public class RoxareXModsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("roxarexmods")
-                    .executes(context -> {
-                        Minecraft client = Minecraft.getInstance();
-                        new Thread(() -> {
-                            try {
-                                Thread.sleep(10);
-                            } catch (InterruptedException ignored) {}
-                            client.execute(() -> client.setScreen(createConfigScreen(null)));
-                        }).start();
-                        return 1;
-                    })
-                    .then(ClientCommandManager.literal("saveConfig")
+            dispatcher.register(
+                    (LiteralArgumentBuilder<FabricClientCommandSource>) (LiteralArgumentBuilder) literal("roxarexmods")
                             .executes(context -> {
-                                // your logic here
-                                ModConfig.HANDLER.save();
-                                RoxareXMods.LOGGER.info("Config Saved but probably didn't do much other than reset most your settings :D");
+                                Minecraft client = Minecraft.getInstance();
+                                new Thread(() -> {
+                                    try {
+                                        Thread.sleep(10);
+                                    } catch (InterruptedException ignored) {
+                                    }
+                                    client.execute(() -> client.setScreen(createConfigScreen(null)));
+                                }).start();
                                 return 1;
                             })
-                    )
-                    .then(ClientCommandManager.literal("setUbixTime")
-                            .then(ClientCommandManager.argument("hours", IntegerArgumentType.integer(0))
-                                    .then(ClientCommandManager.argument("minutes", IntegerArgumentType.integer(0, 59))
-                                            .then(ClientCommandManager.argument("seconds", IntegerArgumentType.integer(0, 59))
-                                                    .executes(context -> {
-                                                        int hours = IntegerArgumentType.getInteger(context, "hours");
-                                                        int minutes = IntegerArgumentType.getInteger(context, "minutes");
-                                                        int seconds = IntegerArgumentType.getInteger(context, "seconds");
+                            .then(literal("saveConfig")
+                                    .executes(context -> {
+                                        ModConfig.HANDLER.save();
+                                        RoxareXMods.LOGGER.info("Config Saved but probably didn't do much other than reset most your settings :D");
+                                        return 1;
+                                    })
+                            )
+                            .then(literal("setUbixTime")
+                                    .then(argument("hours", IntegerArgumentType.integer(0))
+                                            .then(argument("minutes", IntegerArgumentType.integer(0, 59))
+                                                    .then(argument("seconds", IntegerArgumentType.integer(0, 59))
+                                                            .executes(context -> {
+                                                                int hours = IntegerArgumentType.getInteger(context, "hours");
+                                                                int minutes = IntegerArgumentType.getInteger(context, "minutes");
+                                                                int seconds = IntegerArgumentType.getInteger(context, "seconds");
 
-                                                        ModConfig.LIVE.UbixNextAvailable = LocalDateTime.now()
-                                                                .plusHours(hours)
-                                                                .plusMinutes(minutes)
-                                                                .plusSeconds(seconds)
-                                                                .withNano(0);
+                                                                ModConfig.LIVE.UbixNextAvailable = LocalDateTime.now()
+                                                                        .plusHours(hours)
+                                                                        .plusMinutes(minutes)
+                                                                        .plusSeconds(seconds)
+                                                                        .withNano(0);
 
-                                                        RoxareXMods.LOGGER.info("Before save: " + ModConfig.HANDLER.instance().UbixNextAvailable);
-                                                        ModConfig.HANDLER.save();
-                                                        RoxareXMods.LOGGER.info("After save: " + ModConfig.HANDLER.instance().UbixNextAvailable);
+                                                                RoxareXMods.LOGGER.info("Before save: " + ModConfig.HANDLER.instance().UbixNextAvailable);
+                                                                ModConfig.HANDLER.save();
+                                                                RoxareXMods.LOGGER.info("After save: " + ModConfig.HANDLER.instance().UbixNextAvailable);
 
-                                                        return 1;
-                                                    })
+                                                                return 1;
+                                                            })
+                                                    )
                                             )
                                     )
                             )
-                    )
             );
         });
     }
