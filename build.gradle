@@ -91,7 +91,7 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
 	// Mod Menu
-	modApi "com.terraformersmc:modmenu:16.0.0"
+	modApi "com.terraformersmc:modmenu:${project.mod_menu_version}"
 
 	// Dandelion (also shades in MoulConfig)
 	include modImplementation("net.azureaaron:dandelion:${project.dandelion_version}")
@@ -110,13 +110,17 @@ dependencies {
 
 	// Apache Commons Text
 	include implementation("org.apache.commons:commons-text:${project.commons_text_version}")
+	// TwelveMonkeys ImageIO - provides ImageInputStreamSpi on JDK 21+
+	include implementation("com.twelvemonkeys.imageio:imageio-core:3.11.0")
+//	include implementation("com.twelvemonkeys.imageio:imageio-stream:3.11.0")
+//	include implementation("com.twelvemonkeys.imageio:imageio-stream:3.9.4")
 
 	// Legacy Item DFU
 	include implementation("net.azureaaron:legacy-item-dfu:${project.legacy_item_dfu_version}")
 
 	// Skyblocker from libs and its dependencies 	#Start#
-	modCompileOnly "maven.modrinth:skyblocker-liap:v6.0.3+1.21.10"
-	modLocalRuntime "maven.modrinth:skyblocker-liap:v6.0.3+1.21.10"
+	modCompileOnly "maven.modrinth:skyblocker-liap:${project.skyblocker_version}"
+	modLocalRuntime "maven.modrinth:skyblocker-liap:${project.skyblocker_version}"
 	// YACL
 	include modImplementation("dev.isxander:yet-another-config-lib:${project.yacl_version}-fabric")
 	// Skyblocker's transitive deps (Modrinth Maven won't pull these automatically)

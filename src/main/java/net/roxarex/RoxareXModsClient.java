@@ -1,7 +1,7 @@
 package net.roxarex;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import net.azureaaron.dandelion_bp.api.DandelionConfigScreen;
+import net.azureaaron.dandelion.api.DandelionConfigScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -31,7 +31,7 @@ public class RoxareXModsClient implements ClientModInitializer {
                     .then(ClientCommandManager.literal("saveConfig")
                             .executes(context -> {
                                 // your logic here
-                                ConfigManager.saveConfig();
+                                ModConfig.HANDLER.save();
                                 RoxareXMods.LOGGER.info("Config Saved but probably didn't do much other than reset most your settings :D");
                                 return 1;
                             })
@@ -52,7 +52,7 @@ public class RoxareXModsClient implements ClientModInitializer {
                                                                 .withNano(0);
 
                                                         RoxareXMods.LOGGER.info("Before save: " + ModConfig.HANDLER.instance().UbixNextAvailable);
-                                                        ConfigManager.saveConfig();
+                                                        ModConfig.HANDLER.save();
                                                         RoxareXMods.LOGGER.info("After save: " + ModConfig.HANDLER.instance().UbixNextAvailable);
 
                                                         return 1;

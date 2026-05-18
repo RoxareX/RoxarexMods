@@ -1,10 +1,10 @@
 package net.roxarex;
 
 import dev.isxander.yacl3.api.controller.ControllerBuilder;
-import net.azureaaron.dandelion_bp.api.ConfigCategory;
-import net.azureaaron.dandelion_bp.api.Option;
-import net.azureaaron.dandelion_bp.api.controllers.FloatController;
-import net.azureaaron.dandelion_bp.api.controllers.IntegerController;
+import net.azureaaron.dandelion.api.ConfigCategory;
+import net.azureaaron.dandelion.api.Option;
+import net.azureaaron.dandelion.api.controllers.FloatController;
+import net.azureaaron.dandelion.api.controllers.IntegerController;
 import net.minecraft.network.chat.Component;
 import dev.isxander.yacl3.api.controller.IntegerSliderControllerBuilder;
 import dev.isxander.yacl3.api.OptionDescription;

@@ -1,6 +1,6 @@
 package net.roxarex;
 
-import net.azureaaron.dandelion_bp.api.DandelionConfigScreen;
+import net.azureaaron.dandelion.api.DandelionConfigScreen;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -18,7 +18,7 @@ public class RoxareXMods implements ModInitializer {
         LOGGER.info("Hello Fabric world!");
 
         // Load Config before trying to change it
-        ConfigManager.loadConfig();
+        ModConfig.HANDLER.load();
 
         // Eagerly capture Dandelion's live instance at startup
         DandelionConfigScreen.create(
@@ -33,6 +33,8 @@ public class RoxareXMods implements ModInitializer {
         ); // no .generateScreen() — we just want the lambda to run and capture config
 
         LOGGER.info("Config loaded successfully!");
+
+        // TODO: make a calendar that includes every skyblock event
 
 
         RiftUbixCooldown.init();
