@@ -2,11 +2,13 @@ package net.roxarex.skyblock.rift;
 
 import de.hysky.skyblocker.SkyblockerMod;
 import de.hysky.skyblocker.annotations.Init;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 // Avoid direct GuiGraphics dependency; use reflective GuiGraphics calls when present
 import de.hysky.skyblocker.utils.Utils;
@@ -19,14 +21,9 @@ import net.minecraft.resources.Identifier;
 import net.roxarex.ConfigManager;
 import net.roxarex.ModConfig;
 import net.roxarex.RoxareXMods;
-import net.roxarex.RoxareXModsClient;
 import net.roxarex.injected.SkyblockerStack;
 
-import org.joml.Matrix3x2fStack;
-
 import java.lang.reflect.Method;
-import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.time.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,12 +41,16 @@ public class RiftUbixCooldown {
     );
     private static final Pattern PLAYER_MOTES_PATTERN = Pattern.compile("You earned \\d{1,3}(,\\d{3})* Motes in this match!");
     private static final Pattern OPPONENT_MOTES_PATTERN = Pattern.compile("Your opponent earned \\d{1,3}(,\\d{3})* Motes in this match!");
+    private static boolean active = false;
+    private static int tickCounter = 0;
+    private static int playCount = 0;
 
     @Init
     public static void init() {
         if (initialized) return;
         initialized = true;
 
+        ModConfig.LIVE.UbixNextAvailable = LocalDateTime.now().plusSeconds(22);
 
         // Register the UseItemCallback to listen for item usage
         UseItemCallback.EVENT.register((player, world, hand) -> {
@@ -132,8 +133,9 @@ public class RiftUbixCooldown {
         } else {
             message = "Rift Ubix: Ready";
             if (!playedReadySound && client.player != null) {
-                client.player.playSound(SoundEvents.AMETHYST_BLOCK_CHIME, (float) ModConfig.get().alertVolume, ModConfig.get().alertPitch);
-                client.player.playSound(SoundEvents.AMETHYST_BLOCK_CHIME, 80f, 0.1f);
+                client.gui.setTitle(Component.literal("Rift Ubik's!!!"));
+                client.gui.setSubtitle(Component.literal("Hopefully this didn't block something important. :D"));
+                client.player.playSound(SoundEvents.AMETHYST_BLOCK_BREAK, (float) ModConfig.get().alertVolume, ModConfig.get().alertPitch);
                 playedReadySound = true;
             }
         }

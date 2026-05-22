@@ -2,7 +2,6 @@ plugins {
 	// Building
 	id 'net.fabricmc.fabric-loom' version "${loom_version}"
 	id "com.diffplug.spotless" version "${spotless_version}"
-	id "checkstyle"
 	// Publishing
 	id 'maven-publish'
 	id "me.modmuss50.mod-publish-plugin" version "${mod_publish_plugin_version}"
