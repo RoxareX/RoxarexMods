@@ -41,9 +41,6 @@ public class RiftUbixCooldown {
     );
     private static final Pattern PLAYER_MOTES_PATTERN = Pattern.compile("You earned \\d{1,3}(,\\d{3})* Motes in this match!");
     private static final Pattern OPPONENT_MOTES_PATTERN = Pattern.compile("Your opponent earned \\d{1,3}(,\\d{3})* Motes in this match!");
-    private static boolean active = false;
-    private static int tickCounter = 0;
-    private static int playCount = 0;
 
     @Init
     public static void init() {
