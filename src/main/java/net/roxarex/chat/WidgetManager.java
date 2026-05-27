@@ -1,10 +1,11 @@
 package net.roxarex.chat;
 
+import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.screens.Screen;
 
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -12,9 +13,8 @@ public class WidgetManager {
     private static final WidgetManager INSTANCE = new WidgetManager();
     private final List<BaseWidget> widgets = new CopyOnWriteArrayList<>();
     private volatile Screen attachedScreen = null;
-    private Method addRenderableMethod = null;
-    private boolean positionSetFlag = false;
-
+    private boolean setOriginalPositionFlag = false;
+    private int originalY = 0;
 
     private WidgetManager() {}
 
@@ -22,50 +22,42 @@ public class WidgetManager {
 
     public void register(BaseWidget w) { widgets.add(w); }
 
-    // unused but might want to use later
-    public void renderHud(GuiGraphics graphics, float tickDelta) {
+    public void renderHud(GuiGraphics graphics, float tickDelta, BaseWidget w) {
         Minecraft client = Minecraft.getInstance();
         if (client.screen == null) {
             int mx = (int) client.mouseHandler.xpos();
             int my = (int) client.mouseHandler.ypos();
 
             int margin = 4;
-            int spacing = 4;
-            int startX = margin;
-            int windowHeight = client.getWindow().getGuiScaledHeight(); // used to anchor from bottom
+            int windowHeight = client.getWindow().getGuiScaledHeight();
 
-            // Stack widgets to the right from bottom-left (all aligned to bottom)
-            for (BaseWidget w : widgets) {
-                int widgetY = windowHeight - margin - w.getWidgetHeight() - 14;
-                w.setPosition(startX, widgetY);
-                w.render(graphics, mx, my, tickDelta);
-                startX += w.getWidgetWidth() + spacing;
-            }
+            int widgetY = windowHeight - margin - w.getWidgetHeight() - 14;
+            w.setPosition(w.getX(), widgetY);
+            w.render(graphics, mx, my, tickDelta);
         }
     }
 
     public void attachToScreen(Screen screen) {
         if (screen == attachedScreen) return;
-        try {
-            if (addRenderableMethod == null) {
-                addRenderableMethod = java.util.Arrays.stream(Screen.class.getDeclaredMethods())
-                        .filter(md -> md.getName().equals("addRenderableWidget") && md.getParameterCount() == 1)
-                        .findFirst().orElseThrow();
-                addRenderableMethod.setAccessible(true);
+
+        Minecraft client = Minecraft.getInstance();
+        int windowHeight = client.getWindow().getGuiScaledHeight();
+
+        // Screens.getButtons() is Fabric's safe, remapping-agnostic way to add
+        // interactive widgets to any screen — no reflection needed
+        List<AbstractWidget> buttons = Screens.getButtons(screen);
+
+        for (BaseWidget w : widgets) {
+            if (!setOriginalPositionFlag) {
+                originalY = w.getY();
+                setOriginalPositionFlag = true;
             }
-            Minecraft client = Minecraft.getInstance();
-            int windowHeight = client.getWindow().getGuiScaledHeight();
-            for (BaseWidget w : widgets) {
-                if (!positionSetFlag) {
-                    w.setPosition(w.getX(), windowHeight - w.getWidgetHeight() - w.getY());
-                }
-                addRenderableMethod.invoke(screen, w);
+            w.setPosition(w.getX(), windowHeight - w.getWidgetHeight() - originalY);
+            if (!buttons.contains(w)) {
+                buttons.add(w);
             }
-            attachedScreen = screen;
-            positionSetFlag = true;
-        } catch (ReflectiveOperationException e) {
-            net.roxarex.RoxareXMods.LOGGER.error("WidgetManager failed to attach widgets", e);
         }
+        attachedScreen = screen;
     }
 
     public void detach() {

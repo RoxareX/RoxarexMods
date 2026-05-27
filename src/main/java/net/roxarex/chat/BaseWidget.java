@@ -22,8 +22,10 @@ public abstract class BaseWidget extends AbstractWidget {
     @Override
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         int startColor = 0xFF222222;
-        int endColor = 0xFF555555;
-        graphics.fillGradient(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, startColor, endColor);
+        int endColor   = 0xFF555555;
+        if (isHovered()) {
+            graphics.fillGradient(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, startColor, endColor);
+        }
 
         if (!this.getMessage().getString().isEmpty()) {
             graphics.drawString(Minecraft.getInstance().font, this.getMessage().getString(), this.getX() + 4, this.getY() + (this.height - 8) / 2, 0xFFFFFF, false);
@@ -42,43 +44,16 @@ public abstract class BaseWidget extends AbstractWidget {
     }
 
     public boolean isMouseOver(double mx, double my) {
-        return mx >= this.getX() && mx < this.getX() + this.width && my >= this.getY() && my < this.getY() + this.height;
+        return mx >= this.getX() && mx < this.getX() + this.width
+                && my >= this.getY() && my < this.getY() + this.height;
     }
 
-    // Helper to reposition the widget at runtime
+    // Delegates to AbstractWidget's own setX/setY — no reflection, no remapping issues
+    @Override
     public void setPosition(int x, int y) {
-        // AbstractWidget may have private x/y fields depending on mappings; set via reflection across class hierarchy
-        try {
-            Class<?> cls = this.getClass();
-            boolean set = false;
-            while (cls != null && !set) {
-                try {
-                    java.lang.reflect.Field fx = cls.getDeclaredField("x");
-                    java.lang.reflect.Field fy = cls.getDeclaredField("y");
-                    fx.setAccessible(true);
-                    fy.setAccessible(true);
-                    fx.setInt(this, x);
-                    fy.setInt(this, y);
-                    set = true;
-                } catch (NoSuchFieldException ignored) {
-                    cls = cls.getSuperclass();
-                }
-            }
-            if (!set) {
-                // Last resort: try AbstractWidget declared fields
-                java.lang.reflect.Field fx = net.minecraft.client.gui.components.AbstractWidget.class.getDeclaredField("x");
-                java.lang.reflect.Field fy = net.minecraft.client.gui.components.AbstractWidget.class.getDeclaredField("y");
-                fx.setAccessible(true);
-                fy.setAccessible(true);
-                fx.setInt(this, x);
-                fy.setInt(this, y);
-            }
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            net.roxarex.RoxareXMods.LOGGER.error("Failed to set widget position via reflection", e);
-        }
+        super.setPosition(x, y);
     }
 
-    public int getWidgetWidth() { return this.width; }
+    public int getWidgetWidth()  { return this.width; }
     public int getWidgetHeight() { return this.height; }
 }
-

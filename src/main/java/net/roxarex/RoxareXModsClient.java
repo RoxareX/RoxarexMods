@@ -10,6 +10,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.roxarex.chat.WidgetsInitialization;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
@@ -19,36 +20,7 @@ public class RoxareXModsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
 
-        // spawn the CustomWidet when opening the chat
-
-        // Initialize widget manager and register widgets
-        net.roxarex.chat.WidgetManager manager = net.roxarex.chat.WidgetManager.get();
-        Minecraft mc = Minecraft.getInstance();
-
-        // Example widgets: main action button and an info widget
-        int ww = 10, wh = 10;
-        int ax = 4, ay = 20;
-        net.roxarex.chat.SimpleActionWidget mainBtn = new net.roxarex.chat.SimpleActionWidget(ax, ay, ww, wh, Component.literal("Main"), (mx, my) -> {
-            RoxareXMods.LOGGER.info("Main widget clicked at {}x{}", mx, my);
-            mc.execute(() -> mc.setScreen(createConfigScreen(null)));
-        });
-        net.roxarex.chat.InfoWidget info = new net.roxarex.chat.InfoWidget(ax + wh + 3, ay, ww, wh, Component.literal("Info"));
-
-        manager.register(mainBtn);
-        manager.register(info);
-
-        // Render widgets as HUD when no screen is open
-//        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((graphics, tickDelta) -> manager.renderHud(graphics, 0f));
-
-        // When chat opens, attach widgets to it so they become interactable
-        ClientTickEvents.END_CLIENT_TICK.register(clientTick -> {
-            Screen current = clientTick.screen;
-            if (current instanceof ChatScreen) {
-                manager.attachToScreen(current);
-            } else {
-                manager.detach();
-            }
-        });
+        WidgetsInitialization.init();
 
 
         Minecraft client = Minecraft.getInstance();
