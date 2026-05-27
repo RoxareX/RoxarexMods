@@ -45,7 +45,7 @@ public class WidgetsInitialization {
         Minecraft mc = Minecraft.getInstance();
 
         int ww = 11, wh = 11;
-        int ax = 4, ay = 220;
+        int ax = 300, ay = 22;
 
         SimpleActionWidget allBtn = new SimpleActionWidget(
                 ax, ay, ww, wh,
@@ -96,7 +96,7 @@ public class WidgetsInitialization {
         );
 
         infoWidget = new InfoWidget(
-                ax + (ww + 3) * 2, ay, ww, wh,
+                4 + (ww + 3) * 2, ay, ww, wh,
                 Component.literal("Filtering > All")
         );
 
