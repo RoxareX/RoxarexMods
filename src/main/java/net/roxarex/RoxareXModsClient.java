@@ -5,9 +5,12 @@ import net.azureaaron.dandelion.api.DandelionConfigScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.roxarex.chat.WidgetsInitialization;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
@@ -16,10 +19,14 @@ public class RoxareXModsClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+
+        WidgetsInitialization.init();
+
+
+        Minecraft client = Minecraft.getInstance();
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(ClientCommandManager.literal("roxarexmods")
                     .executes(context -> {
-                        Minecraft client = Minecraft.getInstance();
                         new Thread(() -> {
                             try {
                                 Thread.sleep(10);
@@ -70,6 +77,7 @@ public class RoxareXModsClient implements ClientModInitializer {
                 ModConfig.HANDLER,
                 (defaults, config, builder) -> {
                     ModConfig.LIVE = config; // capture Dandelion's actual instance
+                    RoxareXMods.LOGGER.info("ModConfig created");
                     return builder
                             .title(Component.literal("RoxareXMods Configuration"))
                             .category(GeneralConfigCategory.create(defaults, config))
