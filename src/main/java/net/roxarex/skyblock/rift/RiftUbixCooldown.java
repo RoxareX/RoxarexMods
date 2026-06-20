@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 // Avoid direct GuiGraphics dependency; use reflective GuiGraphics calls when present
 import de.hysky.skyblocker.utils.Utils;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -132,7 +133,7 @@ public class RiftUbixCooldown {
             if (!playedReadySound && client.player != null) {
                 client.gui.setTitle(Component.literal("Rift Ubik's!!!"));
                 client.gui.setSubtitle(Component.literal("Hopefully this didn't block something important. :D"));
-                client.player.playSound(SoundEvents.AMETHYST_BLOCK_BREAK, (float) ModConfig.get().alertVolume, ModConfig.get().alertPitch);
+				client.player.playSound(SoundEvents.AMETHYST_BLOCK_BREAK, (float) ModConfig.get().alertVolume, ModConfig.get().alertPitch);
                 playedReadySound = true;
             }
         }
