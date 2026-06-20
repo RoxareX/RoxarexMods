@@ -6,10 +6,11 @@
 	"injectors": {
 		"defaultRequire": 1
 	},
-	"overwrites": {
-		"requireAnnotations": true
-	},
-	"client": [
-		"ItemStackMixin"
-	]
+ "overwrites": {
+    "requireAnnotations": true
+  },
+  "client": [
+    "ChatComponentMixin",
+    "ItemStackMixin"
+  ]
 }
