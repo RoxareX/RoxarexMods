@@ -3,8 +3,8 @@ package net.roxarex;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 
-import net.azureaaron.dandelion_bp.api.ConfigManager;
-import net.azureaaron.dandelion_bp.api.ConfigType;
+import net.azureaaron.dandelion.api.ConfigManager;
+import net.azureaaron.dandelion.api.ConfigType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.roxarex.utils.LocalDateTimeAdapter;
 

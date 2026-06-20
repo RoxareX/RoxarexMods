@@ -1,9 +1,9 @@
 package net.roxarex;
 
-import net.azureaaron.dandelion_bp.api.ConfigCategory;
-import net.azureaaron.dandelion_bp.api.Option;
-import net.azureaaron.dandelion_bp.api.controllers.FloatController;
-import net.azureaaron.dandelion_bp.api.controllers.IntegerController;
+import net.azureaaron.dandelion.api.ConfigCategory;
+import net.azureaaron.dandelion.api.Option;
+import net.azureaaron.dandelion.api.controllers.FloatController;
+import net.azureaaron.dandelion.api.controllers.IntegerController;
 import net.minecraft.network.chat.Component;
 
 public class RiftConfigCategory {
