@@ -1,12 +1,12 @@
 package net.roxarex;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.azureaaron.dandelion.api.DandelionConfigScreen;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.roxarex.chat.WidgetsInitialization;
@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.LocalDateTime;
 
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 public class RoxareXModsClient implements ClientModInitializer {
 
     @Override
@@ -24,7 +26,8 @@ public class RoxareXModsClient implements ClientModInitializer {
 
         Minecraft client = Minecraft.getInstance();
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(ClientCommandManager.literal("roxarexmods")
+            dispatcher.register(
+                    (LiteralArgumentBuilder<FabricClientCommandSource>) literal("roxarexmods")
                     .executes(context -> {
                         new Thread(() -> {
                             try {
@@ -34,9 +37,9 @@ public class RoxareXModsClient implements ClientModInitializer {
                         }).start();
                         return 1;
                     })
-                    .then(ClientCommandManager.literal("saveConfig")
+                    .then(
+                            (LiteralArgumentBuilder<FabricClientCommandSource>) literal("roxarexmods")
                             .executes(context -> {
-                                Minecraft client = Minecraft.getInstance();
                                 new Thread(() -> {
                                     try {
                                         Thread.sleep(10);
@@ -78,6 +81,7 @@ public class RoxareXModsClient implements ClientModInitializer {
                                             )
                                     )
                             )
+                    )
             );
         });
     }

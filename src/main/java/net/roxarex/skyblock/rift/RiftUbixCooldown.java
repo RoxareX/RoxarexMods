@@ -2,7 +2,6 @@ package net.roxarex.skyblock.rift;
 
 import de.hysky.skyblocker.SkyblockerMod;
 import de.hysky.skyblocker.annotations.Init;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -10,9 +9,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
-// Avoid direct GuiGraphics dependency; use reflective GuiGraphics calls when present
 import de.hysky.skyblocker.utils.Utils;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -221,9 +218,8 @@ public class RiftUbixCooldown {
                             Object res = f.get(ubixIconObj);
                             if (res instanceof ItemStack) { ubixIcon = (ItemStack) res; break; }
                             if (res instanceof Item) { ubixIcon = new ItemStack((Item) res); break; }
-                            if (res instanceof String) {
+                            if (res instanceof String sres) {
                                 try {
-                                    String sres = (String) res;
                                     Identifier id = null;
                                     try {
                                         java.lang.reflect.Method tp = Identifier.class.getMethod("tryParse", String.class);

@@ -1,7 +1,7 @@
 package net.roxarex.chat;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 public class InfoWidget extends BaseWidget {
@@ -10,17 +10,17 @@ public class InfoWidget extends BaseWidget {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-        super.renderWidget(graphics, mouseX, mouseY, delta);
-        // maybe draw an info icon or extra indicator later
-//        graphics.fill(this.getX(), this.getY(),  this.getX() + this.getWidth(), this.getY() + this.getHeight(), 0xFFFFFFFF );
-        graphics.drawCenteredString(
-                Minecraft.getInstance().font,
-                this.getMessage(),
-                // X + 1 for screen offset + 4 for spacing = 5
-                this.getX() + this.width / 2 + 5,
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
+        // Draw semi-transparent background for the info widget
+//        graphics.fill(this.getX(), this.getY(), this.getX() + this.width, this.getY() + this.height, 0x88000000);
+
+        // Draw the info text centered in the widget (no super call to avoid duplicate rendering)
+        String text = this.getMessage().getString();
+        int textWidth = Minecraft.getInstance().font.width(text);
+        graphics.text(Minecraft.getInstance().font,
+                text,
+                this.getX() + this.width / 2 - textWidth / 2 + 5,
                 this.getY() + (this.height - 7) / 2,
-                0xFFFFFFFF
-        );
+                0xFFFFFFFF, false);
     }
 }

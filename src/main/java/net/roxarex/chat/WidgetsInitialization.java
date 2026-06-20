@@ -56,7 +56,7 @@ public class WidgetsInitialization {
                     if (partyFilterEnabled || guildFilterEnabled) {
                         partyFilterEnabled = false;
                         guildFilterEnabled = false;
-                        rebuildChat(mc, allMessages);
+//                        rebuildChat(mc, allMessages);
                         infoWidget.setMessage(Component.literal("Filtering > All"));
                         RoxareXMods.LOGGER.info("Filter OFF");
                     }
@@ -72,7 +72,7 @@ public class WidgetsInitialization {
                     if (!partyFilterEnabled) {
                         partyFilterEnabled = true;
                         guildFilterEnabled = false;
-                        rebuildChat(mc, partyMessages);
+//                        rebuildChat(mc, partyMessages);
                         infoWidget.setMessage(Component.literal("Filtering > Party"));
                         RoxareXMods.LOGGER.info("Party filter ON");
                     }
@@ -88,7 +88,7 @@ public class WidgetsInitialization {
                     if (!guildFilterEnabled) {
                         guildFilterEnabled = true;
                         partyFilterEnabled = false;
-                        rebuildChat(mc, guildMessages);
+//                        rebuildChat(mc, guildMessages);
                         infoWidget.setMessage(Component.literal("Filtering > Guild"));
                         RoxareXMods.LOGGER.info("Guild filter ON");
                     }
@@ -100,8 +100,9 @@ public class WidgetsInitialization {
                 Component.literal("Filtering > All")
         );
 
-        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((graphics, tickDelta) ->
-                manager.renderHud(graphics, tickDelta.getGameTimeDeltaTicks(), infoWidget));
+        // Register HUD element for rendering widgets on HUD
+//        manager.setHudLayout(ax, ay, ww, wh);
+        WidgetManager.registerHudElement(infoWidget);
 
         manager.register(allBtn);
         manager.register(partyBtn);
@@ -112,15 +113,19 @@ public class WidgetsInitialization {
     }
 
     private static void rebuildChat(Minecraft mc, Deque<Component> source) {
+        // Note: ChatComponent.addMessage signature changed in 26.1
+        // This method is no longer compatible with the new API
         mc.execute(() -> {
-            ChatComponent chat = mc.gui.getChat();
-            chat.clearMessages(false);
-
-            Component[] snapshot = source.toArray(new Component[0]);
-            int start = Math.max(0, snapshot.length - DISPLAY_LIMIT);
-            for (int i = start; i < snapshot.length; i++) {
-                chat.addMessage(snapshot[i]);
-            }
+            // The new addMessage requires Component, MessageSignature, GuiMessageSource, GuiMessageTag
+            // For now, we skip chat rebuilding until proper integration
+//            ChatComponent chat = mc.gui.getChat();
+//            chat.clearMessages(false);
+//
+//            Component[] snapshot = source.toArray(new Component[0]);
+//            int start = Math.max(0, snapshot.length - DISPLAY_LIMIT);
+//            for (int i = start; i < snapshot.length; i++) {
+//                chat.addMessage(snapshot[i]);
+//            }
         });
     }
 

@@ -1,10 +1,14 @@
 package net.roxarex.chat;
 
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.client.screen.v1.Screens;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.Identifier;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -22,7 +26,7 @@ public class WidgetManager {
 
     public void register(BaseWidget w) { widgets.add(w); }
 
-    public void renderHud(GuiGraphics graphics, float tickDelta, BaseWidget w) {
+    public void renderHud(GuiGraphicsExtractor graphics, float tickDelta, BaseWidget w) {
         Minecraft client = Minecraft.getInstance();
         if (client.screen == null) {
             int mx = (int) client.mouseHandler.xpos();
@@ -33,8 +37,20 @@ public class WidgetManager {
 
             int widgetY = windowHeight - margin - w.getWidgetHeight() - 14;
             w.setPosition(w.getX(), widgetY);
-            w.render(graphics, mx, my, tickDelta);
+            w.extractWidgetRenderState(graphics, mx, my, tickDelta);
         }
+    }
+
+    /**
+     * Registers a HUD element that renders widgets on the HUD.
+     * This should be called once during initialization.
+     */
+    public static void registerHudElement(BaseWidget w) {
+        HudElementRegistry.attachElementBefore(
+            VanillaHudElements.CHAT,
+            Identifier.fromNamespaceAndPath("roxarexmods", "chat_filters"),
+            (graphics, deltaTracker) -> WidgetManager.get().renderHud(graphics, deltaTracker.getGameTimeDeltaPartialTick(false), w)
+        );
     }
 
     public void attachToScreen(Screen screen) {
@@ -43,9 +59,12 @@ public class WidgetManager {
         Minecraft client = Minecraft.getInstance();
         int windowHeight = client.getWindow().getGuiScaledHeight();
 
-        // Screens.getButtons() is Fabric's safe, remapping-agnostic way to add
-        // interactive widgets to any screen — no reflection needed
-        List<AbstractWidget> buttons = Screens.getButtons(screen);
+        // Get widgets list via Screens.getWidgets() and add our widgets
+        @SuppressWarnings("unchecked")
+        List<AbstractWidget> screenWidgets = Screens.getWidgets(screen);
+
+        // Remove widgets from screen first to avoid duplicates
+        screenWidgets.removeAll(widgets);
 
         for (BaseWidget w : widgets) {
             if (!setOriginalPositionFlag) {
@@ -53,8 +72,8 @@ public class WidgetManager {
                 setOriginalPositionFlag = true;
             }
             w.setPosition(w.getX(), windowHeight - w.getWidgetHeight() - originalY);
-            if (!buttons.contains(w)) {
-                buttons.add(w);
+            if (!screenWidgets.contains(w)) {
+                screenWidgets.add(w);
             }
         }
         attachedScreen = screen;

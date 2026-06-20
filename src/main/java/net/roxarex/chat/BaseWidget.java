@@ -1,7 +1,7 @@
 package net.roxarex.chat;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.network.chat.Component;
@@ -20,7 +20,7 @@ public abstract class BaseWidget extends AbstractWidget {
     protected void updateWidgetNarration(@NonNull NarrationElementOutput builder) { }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         int startColor = 0xFF222222;
         int endColor   = 0xFF555555;
         if (isHovered()) {
@@ -28,7 +28,7 @@ public abstract class BaseWidget extends AbstractWidget {
         }
 
         if (!this.getMessage().getString().isEmpty()) {
-            graphics.drawString(Minecraft.getInstance().font, this.getMessage().getString(), this.getX() + 4, this.getY() + (this.height - 8) / 2, 0xFFFFFF, false);
+            graphics.text(Minecraft.getInstance().font, this.getMessage().getString(), this.getX() + 4, this.getY() + (this.height - 8) / 2, 0xFFFFFF, false);
         }
     }
 

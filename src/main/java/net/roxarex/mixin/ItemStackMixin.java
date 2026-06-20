@@ -10,7 +10,6 @@ import de.hysky.skyblocker.skyblock.item.SkyblockItemRarity;
 import de.hysky.skyblocker.skyblock.profileviewer.ProfileViewerScreen;
 import de.hysky.skyblocker.utils.ItemAbility;
 import de.hysky.skyblocker.utils.ItemUtils;
-import de.hysky.skyblocker.utils.OkLabColor;
 import de.hysky.skyblocker.utils.Utils;
 import it.unimi.dsi.fastutil.ints.IntIntPair;
 import org.jspecify.annotations.Nullable;
@@ -30,7 +29,7 @@ import net.minecraft.core.component.DataComponentHolder;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.CommonColors;
+import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.TooltipProvider;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
@@ -112,7 +111,13 @@ public abstract class ItemStackMixin implements DataComponentHolder, SkyblockerS
 
 	@ModifyReturnValue(method = "getBarColor", at = @At("RETURN"))
 	private int modifyItemBarColor(int original) {
-		return durabilityBarFill >= 0 ? OkLabColor.interpolate(CommonColors.RED, CommonColors.GREEN, durabilityBarFill) : original;
+		if (durabilityBarFill < 0) return original;
+		// Interpolate between red (low durability) and green (high durability)
+		float t = durabilityBarFill;
+		int r = (int) (237 * t + 80 * (1 - t));
+		int g = (int) (34 * t + 230 * (1 - t));
+		int b = (int) (34 * t + 34 * (1 - t));
+		return (r & 0xFF) << 16 | (g & 0xFF) << 8 | (b & 0xFF);
 	}
 
 	/**
