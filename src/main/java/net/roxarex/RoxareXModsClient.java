@@ -33,7 +33,7 @@ public class RoxareXModsClient implements ClientModInitializer {
                             try {
                                 Thread.sleep(10);
                             } catch (InterruptedException ignored) {}
-                            client.execute(() -> client.setScreen(createConfigScreen(null)));
+                            client.execute(() -> client.gui.setScreen(createConfigScreen(null)));
                         }).start();
                         return 1;
                     })
@@ -45,7 +45,7 @@ public class RoxareXModsClient implements ClientModInitializer {
                                         Thread.sleep(10);
                                     } catch (InterruptedException ignored) {
                                     }
-                                    client.execute(() -> client.setScreen(createConfigScreen(null)));
+                                    client.execute(() -> client.gui.setScreen(createConfigScreen(null)));
                                 }).start();
                                 return 1;
                             })

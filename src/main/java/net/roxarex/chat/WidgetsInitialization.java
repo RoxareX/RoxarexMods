@@ -92,7 +92,7 @@ public class WidgetsInitialization {
         net.minecraft.client.Minecraft.getInstance().execute(() -> {
             try {
                 var mc = net.minecraft.client.Minecraft.getInstance();
-                var chatComponent = mc.gui.getChat();
+                var chatComponent = mc.gui.hud.getChat();
                 
                 // Clear internal messages list using reflection to ensure proper clearing.
                 // clearMessages(false) does not reliably clear the internal messages deque
@@ -157,7 +157,7 @@ public class WidgetsInitialization {
 
     private static void AttachToScreen(WidgetManager manager) {
         ClientTickEvents.END_CLIENT_TICK.register(clientTick -> {
-            Screen current = clientTick.screen;
+            Screen current = clientTick.gui.screen();
             if (current instanceof ChatScreen) {
                 try {
                     manager.attachToScreen(current);

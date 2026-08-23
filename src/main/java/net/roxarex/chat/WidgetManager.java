@@ -28,7 +28,7 @@ public class WidgetManager {
 
     public void renderHud(GuiGraphicsExtractor graphics, float tickDelta, BaseWidget w) {
         Minecraft client = Minecraft.getInstance();
-        if (client.screen == null) {
+        if (client.gui.screen() == null) {
             int mx = (int) client.mouseHandler.xpos();
             int my = (int) client.mouseHandler.ypos();
 

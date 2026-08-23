@@ -129,8 +129,8 @@ public class RiftUbixCooldown {
         } else {
             message = "Rift Ubix: Ready";
             if (!playedReadySound && client.player != null) {
-                client.gui.setTitle(Component.literal("Rift Ubik's!!!"));
-                client.gui.setSubtitle(Component.literal("Hopefully this didn't block something important. :D"));
+                client.gui.hud.setTitle(Component.literal("Rift Ubik's!!!"));
+                client.gui.hud.setSubtitle(Component.literal("Hopefully this didn't block something important. :D"));
 				client.player.playSound(SoundEvents.AMETHYST_BLOCK_BREAK, (float) ModConfig.get().alertVolume, ModConfig.get().alertPitch);
                 playedReadySound = true;
             }
