@@ -45,7 +45,8 @@ public class RiftUbixCooldown {
         if (initialized) return;
         initialized = true;
 
-        ModConfig.LIVE.UbixNextAvailable = LocalDateTime.now().plusSeconds(22);
+        // Only for debugging
+//        ModConfig.LIVE.UbixNextAvailable = LocalDateTime.now().plusSeconds(22);
 
         // Register the UseItemCallback to listen for item usage
         UseItemCallback.EVENT.register((player, world, hand) -> {
