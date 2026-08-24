@@ -25,6 +25,15 @@ public class WidgetsInitialization {
     private static ChatComponent predicateTarget;
 
     /**
+     * How many queued messages are re-added per client tick while a filter
+     * rebuild is in progress. Keeps each tick's share of a large history
+     * (up to 16 384 with ChatPatches) well under the tick budget, so a
+     * toggle never freezes the game — the history fills in over the
+     * following ticks instead.
+     */
+    private static final int READD_CHUNK_PER_TICK = 150;
+
+    /**
      * The vanilla message filter installed on the ChatComponent. It is checked
      * by 26.2 both at insertion time (private 4-arg addMessage) and when the
      * trimmed display list is refreshed, so a single delegate covers live
@@ -125,11 +134,13 @@ public class WidgetsInitialization {
      * Applies the currently active filter to the vanilla chat display.
      *
      * The display lists are wiped through direct field access (NOT
-     * clearMessages, which ChatPatches cancels by default) and then the
-     * master history for the active filter is re-added, oldest first, so the
-     * newest message ends up on top. Because the wipe and the re-add happen
-     * in a single main-thread step, no duplication is possible — with or
-     * without ChatPatches installed.
+     * clearMessages, which ChatPatches cancels by default) and the master
+     * history for the active filter is queued for a chunked re-add, oldest
+     * first, so the newest message ends up on top. The re-add is spread
+     * over the following client ticks (see {@link #tickReadd(ChatComponent)}),
+     * so a large history (ChatPatches raises the cap to 16 384) never
+     * stalls the main thread in one burst — with or without ChatPatches
+     * installed.
      */
     private static void applyFilter(Component infoMessage) {
         Minecraft mc = Minecraft.getInstance();
@@ -142,24 +153,51 @@ public class WidgetsInitialization {
                 accessor.roxarex_getTrimmedMessages().clear();
                 accessor.roxarex_getMessageDeletionQueue().clear();
 
-                ChatFilter.beginReadding();
-                try {
-                    for (Component message : ChatFilter.getFilteredMessagesArray()) {
-                        ADD_MESSAGE.invoke(chatComponent, message, null, null, null);
-                    }
-                } finally {
-                    ChatFilter.endReadding();
-                }
-
-                chatComponent.resetChatScroll();
+                ChatFilter.beginReadding(ChatFilter.getFilteredMessagesArray());
 
                 // Update info widget
                 infoWidget.setMessage(infoMessage);
             } catch (Exception e) {
+                ChatFilter.finishReadding();
                 RoxareXMods.LOGGER.error("Failed to apply chat filter: {}", e.toString());
                 e.printStackTrace();
             }
         });
+    }
+
+    /**
+     * Continues the chunked filter rebuild on the client thread: re-adds up
+     * to {@link #READD_CHUNK_PER_TICK} queued messages per tick through the
+     * private addMessage, and finalizes the rebuild (scroll reset, info
+     * widget) once the queue is exhausted.
+     */
+    private static void tickReadd(ChatComponent chatComponent) {
+        if (!ChatFilter.isReadding()) return;
+
+        boolean done = false;
+        for (int i = 0; i < READD_CHUNK_PER_TICK; i++) {
+            Component message = ChatFilter.pollNextReadd();
+            if (message == null) {
+                done = true;
+                break;
+            }
+            try {
+                ChatFilter.setCaptureSuppressed(true);
+                ADD_MESSAGE.invoke(chatComponent, message, null, null, null);
+            } catch (Exception e) {
+                done = true;
+                RoxareXMods.LOGGER.error("Failed to re-add chat history: {}", e.toString());
+                e.printStackTrace();
+                break;
+            } finally {
+                ChatFilter.setCaptureSuppressed(false);
+            }
+        }
+
+        if (done) {
+            ChatFilter.finishReadding();
+            chatComponent.resetChatScroll();
+        }
     }
 
     private static void registerChatFilter() {
@@ -171,6 +209,8 @@ public class WidgetsInitialization {
     private static void AttachToScreen(WidgetManager manager) {
         ClientTickEvents.END_CLIENT_TICK.register(clientTick -> {
             ChatComponent chatComponent = clientTick.gui.hud.getChat();
+            tickReadd(chatComponent);
+
             if (chatComponent != null && chatComponent != predicateTarget) {
                 predicateTarget = chatComponent;
                 chatComponent.setVisibleMessageFilter(VISIBLE_MESSAGE_FILTER);

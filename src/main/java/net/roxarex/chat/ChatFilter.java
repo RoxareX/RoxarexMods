@@ -20,10 +20,9 @@ import java.util.regex.Pattern;
  *    {@code ChatComponent}'s private {@code addMessage} — the single choke
  *    point through which every displayed message passes (network messages,
  *    ChatPatches' chatlog restore, its queued drain, and our own filter
- *    re-adds, which are suppressed via
- *    {@link #beginReadding()}/{@link #endReadding()}). It stores the message
- *    in the master history deque. The Fabric handlers always let the message
- *    through; they never drop packets.
+ *    re-adds, which are suppressed around each call via
+ *    {@link #setCaptureSuppressed(boolean)}). It stores the message in the
+ *    master history deque.
  *  - {@link #shouldShow(Component)} is a pure visibility check with no side
  *    effects. It drives the vanilla {@code visibleMessageFilter} predicate
  *    (installed on the {@code ChatComponent}) and the filter view returned by
@@ -52,9 +51,20 @@ public class ChatFilter {
     private static final Set<Component> CAPTURED =
             Collections.newSetFromMap(new IdentityHashMap<>());
 
-    // True while the filter rebuild is re-adding the master history through
-    // addMessage, so the capture injection ignores our own re-adds.
-    private static volatile boolean readding = false;
+    // True for the whole of a filter rebuild, so the client-tick hook keeps
+    // draining the queue until it is exhausted.
+    private static volatile boolean rebuildInProgress = false;
+
+    // True only while one of our own addMessage re-add calls is executing,
+    // so the capture injection ignores exactly our re-added history and
+    // still captures live network messages that arrive between chunks.
+    private static volatile boolean captureSuppressed = false;
+
+    // The master history queued for the next filter rebuild, oldest first.
+    // Re-added in small chunks across client ticks so a large history
+    // (ChatPatches raises the cap to 16 384) never stalls the main thread
+    // in one burst.
+    private static final Deque<Component> READD_QUEUE = new ArrayDeque<>();
 
     // Hypixel prefixes party/guild chat with "Party > " / "Guild > ", optionally
     // after a "[HH:MM:SS] " timestamp. Match with find() so leading timestamps
@@ -99,7 +109,7 @@ public class ChatFilter {
      * @param message the message to store
      */
     public static synchronized void track(Component message) {
-        if (readding) return;
+        if (captureSuppressed) return;
         Component store = normalize(message);
         if (!CAPTURED.add(store)) return;
         if (allMessages.size() >= MAX_MESSAGES) allMessages.pollFirst();
@@ -125,27 +135,62 @@ public class ChatFilter {
 
     /**
      * Clear the stored history. Called on disconnect so each world session
-     * starts with a fresh history.
+     * starts with a fresh history. Also cancels any in-progress rebuild
+     * re-add: the display is cleared per world, so a chunked re-add must
+     * not keep refilling it after the disconnect.
      */
     public static synchronized void clearAllMessages() {
         allMessages.clear();
         CAPTURED.clear();
+        READD_QUEUE.clear();
+        rebuildInProgress = false;
+        captureSuppressed = false;
     }
 
     /**
-     * Mark the start of a filter rebuild re-add. The capture mixin skips
-     * storing while this is set, so the re-added history is not captured a
-     * second time.
+     * Queue the given history for a filter rebuild re-add and mark the
+     * rebuild as in progress, so the client-tick hook keeps draining the
+     * queue until it is exhausted.
+     * @param messages the history to re-add, oldest first
      */
-    public static void beginReadding() {
-        readding = true;
+    public static synchronized void beginReadding(Component[] messages) {
+        READD_QUEUE.clear();
+        for (Component message : messages) READD_QUEUE.addLast(message);
+        rebuildInProgress = true;
     }
 
     /**
-     * Mark the end of a filter rebuild re-add.
+     * @return whether a filter rebuild re-add is in progress
      */
-    public static void endReadding() {
-        readding = false;
+    public static boolean isReadding() {
+        return rebuildInProgress;
+    }
+
+    /**
+     * Poll the next message queued for the current rebuild, oldest first.
+     * @return the next message to re-add, or null when the queue is empty
+     */
+    public static synchronized Component pollNextReadd() {
+        return READD_QUEUE.pollFirst();
+    }
+
+    /**
+     * Mark the end of the current filter rebuild re-add.
+     */
+    public static synchronized void finishReadding() {
+        READD_QUEUE.clear();
+        rebuildInProgress = false;
+        captureSuppressed = false;
+    }
+
+    /**
+     * Temporarily suppress the capture around one of our own addMessage
+     * re-add calls, so the re-added history is not captured a second time
+     * while live network messages still get captured.
+     * @param suppressed whether the capture should be skipped
+     */
+    public static void setCaptureSuppressed(boolean suppressed) {
+        captureSuppressed = suppressed;
     }
 
     /**
