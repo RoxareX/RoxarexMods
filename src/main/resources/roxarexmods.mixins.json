@@ -10,7 +10,7 @@
     "requireAnnotations": true
   },
   "client": [
-    "ChatComponentMixin",
+    "ChatComponentAccessor",
     "ItemStackMixin"
   ]
 }

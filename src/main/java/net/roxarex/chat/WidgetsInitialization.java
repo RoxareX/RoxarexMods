@@ -2,17 +2,58 @@ package net.roxarex.chat;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.multiplayer.chat.GuiMessage;
+import net.minecraft.client.multiplayer.chat.GuiMessageSource;
+import net.minecraft.client.multiplayer.chat.GuiMessageTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MessageSignature;
 import net.roxarex.RoxareXMods;
+import net.roxarex.mixin.ChatComponentAccessor;
 
+import java.lang.reflect.Method;
 import java.util.NoSuchElementException;
+import java.util.function.Predicate;
 
 public class WidgetsInitialization {
 
     private static InfoWidget infoWidget;
+
+    private static ChatComponent predicateTarget;
+
+    /**
+     * The vanilla message filter installed on the ChatComponent. It is checked
+     * by 26.2 both at insertion time (private 4-arg addMessage) and when the
+     * trimmed display list is refreshed, so a single delegate covers live
+     * gating. Must never be set to null: ChatComponent dereferences it
+     * without a null check (its own default is an always-true lambda).
+     */
+    private static final Predicate<GuiMessage> VISIBLE_MESSAGE_FILTER = msg -> ChatFilter.shouldShow(msg.content());
+
+    /**
+     * The private addMessage(Component, MessageSignature, GuiMessageSource, GuiMessageTag)
+     * used to re-add the stored history when the filter switches.
+     */
+    private static final Method ADD_MESSAGE;
+
+    static {
+        try {
+            ADD_MESSAGE = ChatComponent.class.getDeclaredMethod(
+                    "addMessage",
+                    Component.class,
+                    MessageSignature.class,
+                    GuiMessageSource.class,
+                    GuiMessageTag.class
+            );
+            ADD_MESSAGE.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     public static void init() {
         WidgetManager manager = WidgetManager.get();
@@ -29,7 +70,7 @@ public class WidgetsInitialization {
                     if (ChatFilter.isPartyFilterEnabled() || ChatFilter.isGuildFilterEnabled()) {
                         ChatFilter.setPartyFilterEnabled(false);
                         ChatFilter.setGuildFilterEnabled(false);
-                        switchFilterAndRebuild(Component.literal("Filtering > All"));
+                        applyFilter(Component.literal("Filtering > All"));
                         RoxareXMods.LOGGER.info("Filter OFF");
                     }
                 }
@@ -44,7 +85,7 @@ public class WidgetsInitialization {
                     if (!ChatFilter.isPartyFilterEnabled()) {
                         ChatFilter.setPartyFilterEnabled(true);
                         ChatFilter.setGuildFilterEnabled(false);
-                        switchFilterAndRebuild(Component.literal("Filtering > Party"));
+                        applyFilter(Component.literal("Filtering > Party"));
                         RoxareXMods.LOGGER.info("Party filter ON");
                     }
                 }
@@ -59,7 +100,7 @@ public class WidgetsInitialization {
                     if (!ChatFilter.isGuildFilterEnabled()) {
                         ChatFilter.setGuildFilterEnabled(true);
                         ChatFilter.setPartyFilterEnabled(false);
-                        switchFilterAndRebuild(Component.literal("Filtering > Guild"));
+                        applyFilter(Component.literal("Filtering > Guild"));
                         RoxareXMods.LOGGER.info("Guild filter ON");
                     }
                 }
@@ -82,59 +123,37 @@ public class WidgetsInitialization {
     }
 
     /**
-     * Clears the vanilla chat by accessing ChatComponent via the Minecraft instance.
+     * Applies the currently active filter to the vanilla chat display.
+     *
+     * The display lists are wiped through direct field access (NOT
+     * clearMessages, which ChatPatches cancels by default) and then the
+     * master history for the active filter is re-added, oldest first, so the
+     * newest message ends up on top. Because the wipe and the re-add happen
+     * in a single main-thread step, no duplication is possible — with or
+     * without ChatPatches installed.
      */
-    /**
-     * Combined method to clear and rebuild chat display atomically.
-     * This prevents message duplication that occurs with separate async calls.
-     */
-    private static void switchFilterAndRebuild(Component infoMessage) {
-        net.minecraft.client.Minecraft.getInstance().execute(() -> {
+    private static void applyFilter(Component infoMessage) {
+        Minecraft mc = Minecraft.getInstance();
+        mc.execute(() -> {
             try {
-                var mc = net.minecraft.client.Minecraft.getInstance();
-                var chatComponent = mc.gui.hud.getChat();
-                
-                // Clear internal messages list using reflection to ensure proper clearing.
-                // clearMessages(false) does not reliably clear the internal messages deque
-                // in some Minecraft versions, causing message duplication on filter switch.
-                try {
-                    java.lang.reflect.Field messagesField = ChatComponent.class.getDeclaredField("messages");
-                    messagesField.setAccessible(true);
-                    @SuppressWarnings("unchecked")
-                    java.util.Collection<?> chatMessages = (java.util.Collection<?>) messagesField.get(chatComponent);
-                    chatMessages.clear();
-                } catch (NoSuchFieldException | IllegalAccessException e) {
-                    // Fall back to clearMessages if reflection fails
-                    chatComponent.clearMessages(true);
+                ChatComponent chatComponent = mc.gui.hud.getChat();
+                ChatComponentAccessor accessor = (ChatComponentAccessor) chatComponent;
+
+                accessor.roxarex_getAllMessages().clear();
+                accessor.roxarex_getTrimmedMessages().clear();
+                accessor.roxarex_getMessageDeletionQueue().clear();
+
+                for (Component message : ChatFilter.getFilteredMessagesArray()) {
+                    ADD_MESSAGE.invoke(chatComponent, message, null, null, null);
                 }
-                
-                // Skip storing messages during rebuild to prevent duplication
-                ChatFilter.setSkipStoreOnShouldShow(true);
-                
-                Component[] filteredMessages = ChatFilter.getFilteredMessagesArray();
-                
-                // Use reflection to call the private addMessage method
-                java.lang.reflect.Method addMessageMethod = ChatComponent.class.getDeclaredMethod(
-                    "addMessage",
-                    Component.class,
-                    net.minecraft.network.chat.MessageSignature.class,
-                    net.minecraft.client.multiplayer.chat.GuiMessageSource.class,
-                    net.minecraft.client.multiplayer.chat.GuiMessageTag.class
-                );
-                addMessageMethod.setAccessible(true);
-                
-                for (Component msg : filteredMessages) {
-                    addMessageMethod.invoke(chatComponent, msg, null, null, null);
-                }
-                
-                // Re-enable storing messages
-                ChatFilter.setSkipStoreOnShouldShow(false);
-                
+
+                chatComponent.resetChatScroll();
+
                 // Update info widget
                 infoWidget.setMessage(infoMessage);
             } catch (Exception e) {
-                ChatFilter.setSkipStoreOnShouldShow(false);
-                RoxareXMods.LOGGER.error("Failed to switch filter and rebuild: {}", e.getMessage());
+                RoxareXMods.LOGGER.error("Failed to apply chat filter: {}", e.toString());
+                e.printStackTrace();
             }
         });
     }
@@ -142,21 +161,33 @@ public class WidgetsInitialization {
     private static void registerChatFilter() {
         // Signed player chat (vanilla servers)
         ClientReceiveMessageEvents.ALLOW_CHAT.register(
-                (message, signedMessage, sender, params, receptionTimestamp) ->
-                        ChatFilter.shouldShow(message)
+                (message, signedMessage, sender, params, receptionTimestamp) -> {
+                    ChatFilter.track(message);
+                    return true;
+                }
         );
 
         // System/game messages — Hypixel sends ALL chat this way (party, guild, etc.)
         ClientReceiveMessageEvents.ALLOW_GAME.register(
                 (message, overlay) -> {
-                    if (overlay) return true; // never filter the action bar
-                    return ChatFilter.shouldShow(message);
+                    if (!overlay) ChatFilter.track(message);
+                    return true;
                 }
         );
+
+        // Fresh history per world session; filter flags and the installed
+        // predicate intentionally persist across worlds.
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ChatFilter.clearAllMessages());
     }
 
     private static void AttachToScreen(WidgetManager manager) {
         ClientTickEvents.END_CLIENT_TICK.register(clientTick -> {
+            ChatComponent chatComponent = clientTick.gui.hud.getChat();
+            if (chatComponent != null && chatComponent != predicateTarget) {
+                predicateTarget = chatComponent;
+                chatComponent.setVisibleMessageFilter(VISIBLE_MESSAGE_FILTER);
+            }
+
             Screen current = clientTick.gui.screen();
             if (current instanceof ChatScreen) {
                 try {
