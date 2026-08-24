@@ -1,7 +1,6 @@
 package net.roxarex.chat;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
@@ -143,8 +142,13 @@ public class WidgetsInitialization {
                 accessor.roxarex_getTrimmedMessages().clear();
                 accessor.roxarex_getMessageDeletionQueue().clear();
 
-                for (Component message : ChatFilter.getFilteredMessagesArray()) {
-                    ADD_MESSAGE.invoke(chatComponent, message, null, null, null);
+                ChatFilter.beginReadding();
+                try {
+                    for (Component message : ChatFilter.getFilteredMessagesArray()) {
+                        ADD_MESSAGE.invoke(chatComponent, message, null, null, null);
+                    }
+                } finally {
+                    ChatFilter.endReadding();
                 }
 
                 chatComponent.resetChatScroll();
@@ -159,22 +163,6 @@ public class WidgetsInitialization {
     }
 
     private static void registerChatFilter() {
-        // Signed player chat (vanilla servers)
-        ClientReceiveMessageEvents.ALLOW_CHAT.register(
-                (message, signedMessage, sender, params, receptionTimestamp) -> {
-                    ChatFilter.track(message);
-                    return true;
-                }
-        );
-
-        // System/game messages — Hypixel sends ALL chat this way (party, guild, etc.)
-        ClientReceiveMessageEvents.ALLOW_GAME.register(
-                (message, overlay) -> {
-                    if (!overlay) ChatFilter.track(message);
-                    return true;
-                }
-        );
-
         // Fresh history per world session; filter flags and the installed
         // predicate intentionally persist across worlds.
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ChatFilter.clearAllMessages());
